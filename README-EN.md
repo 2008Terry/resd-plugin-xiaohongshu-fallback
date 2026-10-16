@@ -40,4 +40,4 @@ go test ./plugins/resd-plugin-xiaohongshu/tests
 go run main.go plugin pack ./plugins/resd-plugin-xiaohongshu
 ```
 
-The package is written to `dist/plugin.zip`. All fixtures contain fictional, sanitized data. See the [development notes](tests/README.md) for endpoint scope, offline checks and manual acceptance steps.
+The package is written to `dist/plugin.zip`. All fixtures contain fictional, sanitized data.

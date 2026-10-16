@@ -40,4 +40,4 @@ go test ./plugins/resd-plugin-xiaohongshu/tests
 go run main.go plugin pack ./plugins/resd-plugin-xiaohongshu
 ```
 
-安装包位于 `dist/plugin.zip`。所有 fixture 均为脱敏虚构数据。接口范围、离线检查和人工验收步骤见 [开发说明](tests/README.md)。
+安装包位于 `dist/plugin.zip`。所有 fixture 均为脱敏虚构数据。

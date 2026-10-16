@@ -84,11 +84,14 @@ func resolve(t *testing.T, p model.RuntimePlugin, r model.ResourceCandidate) mod
 
 func TestVideoPlans(t *testing.T) {
 	for _, tc := range []struct {
-		name   string
-		inputs int
-		height int
+		name     string
+		inputs   int
+		height   int
+		duration int64
 	}{
-		{"video-split", 3, 2160}, {"video-qc", 3, 2160}, {"video-progressive", 1, 720}, {"missing-audio-fallback", 1, 720},
+		{"video-split", 3, 2160, 120}, {"video-qc", 3, 2160, 120},
+		{"video-progressive", 1, 720, 120}, {"missing-audio-fallback", 1, 720, 120},
+		{"video-v4", 1, 1280, 20}, {"video-cdn-variants", 3, 2160, 120},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			p := runtime(t)
@@ -100,7 +103,7 @@ func TestVideoPlans(t *testing.T) {
 			if v.Tracks[0].Height != tc.height || v.State != "ready" {
 				t.Fatal("incorrect quality or readiness")
 			}
-			if v.Technical.Duration != 120 {
+			if v.Technical.Duration != tc.duration {
 				t.Fatal("fractional source seconds must be converted to an integer host duration")
 			}
 			if v.Preview == nil || v.Preview.Renderer != "video" || (v.Preview.TrackID != "preview" && v.Preview.TrackID != "video") {
@@ -128,7 +131,48 @@ func TestVideoPlans(t *testing.T) {
 			} else if len(plan.Pipeline) != 0 || plan.Output.Input != "video" {
 				t.Fatal("progressive file must not use stale audio")
 			}
+			if tc.name == "video-v4" && plan.Inputs[0].URL != "https://sns-video-v4.xhscdn.com/fixture/video-259.mp4?sign=fixture&t=4102444800" {
+				t.Fatal("observed CDN route or signed query was lost")
+			}
+			if tc.name == "video-cdn-variants" && !strings.HasPrefix(plan.Inputs[1].URL, "https://audio-edge.xhscdn.com/") {
+				t.Fatal("separate audio CDN must survive download planning")
+			}
 		})
+	}
+}
+
+func TestVideoCDNDomainRejection(t *testing.T) {
+	p := runtime(t)
+	video := handle(t, p, fixture(t, "video-v4")[0]).Resources[1]
+	for index, obs := range fixture(t, "invalid-video-domains") {
+		result := handle(t, p, obs)
+		if !result.Handled || len(result.Resources) != 0 {
+			t.Fatalf("invalid CDN case %d produced a resource", index)
+		}
+		var payload struct {
+			Data struct {
+				Items []struct {
+					NoteCard struct {
+						Video struct {
+							Media struct {
+								Stream map[string][]struct {
+									MasterURL string `json:"master_url"`
+								} `json:"stream"`
+							} `json:"media"`
+						} `json:"video"`
+					} `json:"note_card"`
+				} `json:"items"`
+			} `json:"data"`
+		}
+		if err := json.Unmarshal([]byte(obs.Response.Body), &payload); err != nil {
+			t.Fatal(err)
+		}
+		candidate := video
+		candidate.Tracks = append([]model.ResourceTrack(nil), video.Tracks...)
+		candidate.Tracks[0].URL = payload.Data.Items[0].NoteCard.Video.Media.Stream["EF4"][0].MasterURL
+		if _, _, err := p.Resolve(context.Background(), candidate, model.DownloadOptions{}); err == nil {
+			t.Fatalf("download planning accepted invalid CDN case %d", index)
+		}
 	}
 }
 

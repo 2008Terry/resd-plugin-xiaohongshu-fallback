@@ -2,7 +2,6 @@
 var API_HOST = "edith.xiaohongshu.com";
 var DETAIL_PATH = "/api/sns/web/v1/feed";
 var IMAGE_HOST = "sns-webpic-qc.xhscdn.com";
-var VIDEO_HOSTS = ["sns-video-v6.xhscdn.com", "sns-video-qc.xhscdn.com", "sns-bak-v1.xhscdn.com"];
 
 // Generic suppression covers the site, independently of which media variants
 // the extractor understands. Match DNS boundaries, never a substring/referer.
@@ -31,9 +30,16 @@ function parseURL(value) {
   if (m[3] && m[3] !== (scheme === "https" ? "443" : "80")) return null;
   return {scheme: scheme, host: m[2].toLowerCase(), path: m[4] || "/", query: m[5] || ""};
 }
+// Detail-provided video/audio URLs may move between CDN subdomains. Validate
+// DNS labels and the official suffix instead of maintaining individual hosts.
+// This does not extract resources from arbitrary CDN responses.
+function isVideoHost(host) {
+  return typeof host === "string" && host.length <= 253 &&
+    /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+xhscdn\.com$/.test(host);
+}
 function mediaURL(value, image) {
   var url = parseURL(value);
-  if (!url || (image ? url.host !== IMAGE_HOST : VIDEO_HOSTS.indexOf(url.host) < 0)) return "";
+  if (!url || (image ? url.host !== IMAGE_HOST : !isVideoHost(url.host))) return "";
   // Observed playback upgrades the same URLs without changing signatures.
   return "https://" + url.host + url.path + url.query;
 }
