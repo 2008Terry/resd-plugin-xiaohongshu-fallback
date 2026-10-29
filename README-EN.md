@@ -1,3 +1,9 @@
+# Independent fallback fork
+
+This is a modified fork of putyy/resd-plugin-xiaohongshu under Apache-2.0. The plugin ID, author attribution, image download plan and corresponding contract tests have been changed. The plugin **requires** the companion [res-downloader host patch](https://github.com/2008Terry/res-downloader-xhs-fallback/tree/fix/xhs-image-cdn-fallback); the unmodified host does not implement failover. Disable the official Xiaohongshu plugin to avoid duplicate capture, and recapture resources. No prebuilt ZIP is published here. See [README.md](README.md) for details and limitations.
+
+---
+
 # Xiaohongshu
 
 [中文](README.md) | [English](README-EN.md)
