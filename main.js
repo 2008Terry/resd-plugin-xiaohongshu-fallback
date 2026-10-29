@@ -1,3 +1,4 @@
+// Modified fork: image inputs opt in to host-side CDN fallback.
 // Synchronous Goja hooks: no DOM, fetch, Node APIs or cross-call state.
 var API_HOST = "edith.xiaohongshu.com";
 var DETAIL_PATH = "/api/sns/web/v1/feed";
@@ -291,7 +292,9 @@ function createDownloadPlan(input) {
     selected.push(audio);
   }
   var plan = {inputs: selected.map(function (v) {
-    return {id: v.id, executor: "http-file", url: v.url, headers: v.headers || {}, extension: v.extension || ""};
+    var input = {id: v.id, executor: "http-file", url: v.url, headers: v.headers || {}, extension: v.extension || ""};
+    if (resource.kind === "media.image") input.options = {xiaohongshuBackup: true};
+    return input;
   }), output: {input: primary.id, extension: primary.extension || "", mime: primary.mime || ""}};
   if (selected.length === 2) {
     plan.pipeline = [{id: "merged", executor: "builtin.media.mux", inputs: [primary.id, "audio"], options: {extension: ".mp4"}}];
@@ -346,3 +349,4 @@ function refreshResource(input) {
   return {status: "recaptureRequired", resource: input.resource,
     message: "请重新打开对应的小红书作品 / Reopen the Xiaohongshu work to refresh its media URLs"};
 }
+
