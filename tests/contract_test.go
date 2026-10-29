@@ -350,7 +350,7 @@ func TestMalformedDetailsAndHeaderPrivacy(t *testing.T) {
 
 func TestCaptionFromDetailWithoutPage(t *testing.T) {
 	root := t.TempDir()
-	dir := filepath.Join(root, "plugins", "official.xiaohongshu")
+	dir := filepath.Join(root, "plugins", "terry.xiaohongshu-fallback")
 	if err := os.MkdirAll(dir, 0750); err != nil {
 		t.Fatal(err)
 	}
@@ -367,7 +367,7 @@ func TestCaptionFromDetailWithoutPage(t *testing.T) {
 	catalog := resource.New(root, &config.Config{}, nil, logger, nil)
 	defer catalog.Close()
 	// Mirror the official source recorded when this plugin is installed.
-	if err := os.WriteFile(filepath.Join(root, "plugin-sources.json"), []byte(`{"official.xiaohongshu":"official"}`), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "plugin-sources.json"), []byte(`{"terry.xiaohongshu-fallback":"local"}`), 0600); err != nil {
 		t.Fatal(err)
 	}
 	manager := plugin.NewManager(root, func() plugin.NetworkSettings { return plugin.NetworkSettings{} }, nil, catalog, logger)
@@ -381,7 +381,7 @@ func TestCaptionFromDetailWithoutPage(t *testing.T) {
 	catalog.SetCaptureSource(store)
 	catalog.RegisterTypes([]string{"collection"})
 	catalog.SetTypes([]string{"collection"})
-	status, _ := manager.Status("official.xiaohongshu")
+	status, _ := manager.Status("terry.xiaohongshu-fallback")
 	if len(status.Manifest.PageScripts) != 0 || status.Manifest.Permissions.Has("page-bridge") || status.Manifest.Permissions.Has("inject-page-script") {
 		t.Fatal("caption still depends on webpage")
 	}
@@ -449,7 +449,7 @@ func TestCaptionFromDetailWithoutPage(t *testing.T) {
 // exercised, rather than calling the JS hook outside its declared scope.
 func TestObservedHostsThroughFullPluginChain(t *testing.T) {
 	root := t.TempDir()
-	dir := filepath.Join(root, "plugins", "official.xiaohongshu")
+	dir := filepath.Join(root, "plugins", "terry.xiaohongshu-fallback")
 	for _, name := range []string{"plugin.json", "main.js"} {
 		data, err := os.ReadFile(filepath.Join("..", name))
 		if err != nil {
@@ -467,11 +467,11 @@ func TestObservedHostsThroughFullPluginChain(t *testing.T) {
 	catalog := resource.New(root, &config.Config{}, nil, logger, nil)
 	defer catalog.Close()
 	// Mirror the official source recorded when this plugin is installed.
-	if err := os.WriteFile(filepath.Join(root, "plugin-sources.json"), []byte(`{"official.xiaohongshu":"official"}`), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "plugin-sources.json"), []byte(`{"terry.xiaohongshu-fallback":"local"}`), 0600); err != nil {
 		t.Fatal(err)
 	}
 	manager := plugin.NewManager(root, func() plugin.NetworkSettings { return plugin.NetworkSettings{} }, nil, catalog, logger)
-	if status, ok := manager.Status("official.xiaohongshu"); !ok || !status.Loaded {
+	if status, ok := manager.Status("terry.xiaohongshu-fallback"); !ok || !status.Loaded {
 		t.Fatalf("fixture plugin not loaded: %#v", status)
 	}
 	for _, host := range []string{
@@ -520,3 +520,4 @@ func TestObservedHostsThroughFullPluginChain(t *testing.T) {
 		}
 	}
 }
+
